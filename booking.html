@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book an Appointment · GlowBook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="topbar"></header>
+
+  <main class="container">
+    <section class="section" style="max-width:560px; margin:0 auto; padding-bottom:30px">
+      <div class="section-head" style="justify-content:center">
+        <h2 id="pageTitle">Book your glow</h2>
+      </div>
+
+      <div id="doneBox" style="display:none">
+        <div class="success-banner" id="doneMsg"></div>
+        <div class="card" id="doneCard"></div>
+        <div style="display:flex; gap:10px; margin-top:16px">
+          <a class="btn btn-primary btn-block" href="bookings.html">View My Bookings</a>
+        </div>
+      </div>
+
+      <form id="bookForm" onsubmit="return false;">
+        <div class="step-pills">
+          <span class="step-pill active" id="p1"></span>
+          <span class="step-pill" id="p2"></span>
+          <span class="step-pill" id="p3"></span>
+        </div>
+
+        <!-- Step 1: service + stylist -->
+        <div class="card form-card" id="step1">
+          <h3 style="margin-bottom:12px">1. Pick a service &amp; stylist</h3>
+          <div class="choice-grid" id="serviceChoices" style="margin-bottom:16px"></div>
+          <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:6px">Preferred stylist</label>
+          <div class="choice-grid" id="stylistChoices"></div>
+          <button class="btn btn-primary btn-block" style="margin-top:18px" id="next1">Continue →</button>
+        </div>
+
+        <!-- Step 2: date + time -->
+        <div class="card form-card" id="step2" style="display:none">
+          <h3 style="margin-bottom:12px">2. Date &amp; time</h3>
+          <div class="field">
+            <label for="date">Appointment date</label>
+            <input type="date" id="date" />
+            <div class="hint">Open Mon–Sat, 8:30 AM – 7:00 PM</div>
+          </div>
+          <div class="field">
+            <label>Choose a time slot</label>
+            <div class="time-grid" id="timeGrid"></div>
+          </div>
+          <div style="display:flex; gap:10px; margin-top:18px">
+            <button class="btn btn-outline" id="back2">← Back</button>
+            <button class="btn btn-primary" style="flex:1" id="next2">Continue →</button>
+          </div>
+        </div>
+
+        <!-- Step 3: details -->
+        <div class="card form-card" id="step3" style="display:none">
+          <h3 style="margin-bottom:12px">3. Your details</h3>
+          <div class="field">
+            <label for="name">Full name</label>
+            <input type="text" id="name" placeholder="e.g. Adaeze Okonkwo" />
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="phone">Phone (WhatsApp)</label>
+              <input type="tel" id="phone" placeholder="0803 000 0000" />
+            </div>
+            <div class="field">
+              <label for="pay">Pay at salon?</label>
+              <select id="pay">
+                <option>Cash</option>
+                <option>Bank transfer</option>
+                <option>POS card</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="note">Stylist notes (optional)</label>
+            <textarea id="note" rows="2" placeholder="e.g. Waist length, 4 packs of royal silk…"></textarea>
+          </div>
+          <div class="summary-box card" style="background:var(--blush); border:none; margin-bottom:16px" id="summary"></div>
+          <div style="display:flex; gap:10px">
+            <button class="btn btn-outline" id="back3" type="button">← Back</button>
+            <button class="btn btn-gold" id="confirmBtn" style="flex:1" type="button">✅ Confirm Booking</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div id="footer"></div>
+  <nav id="bottomnav"></nav>
+  <div id="toast"></div>
+
+  <script src="js/data.js"></script>
+  <script>
+    renderChrome("booking");
+
+    const state = { serviceId: null, stylistId: "any", time: null };
+    const params = new URLSearchParams(location.search);
+    if (stylistById(params.get("stylist"))) state.stylistId = params.get("stylist");
+    if (serviceById(params.get("service"))) state.serviceId = params.get("service");
+
+    const user = Auth.user();
+
+    function pill(n) {
+      [1, 2, 3].forEach((i) => document.getElementById("p" + i).classList.toggle("active", i <= n));
+    }
+
+    function show(step) {
+      [1, 2, 3].forEach((i) => (document.getElementById("step" + i).style.display = i === step ? "block" : "none"));
+      pill(step);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderChoices() {
+      document.getElementById("serviceChoices").innerHTML = GLOW.SERVICES.map(
+        (s) => `
+        <button type="button" class="choice ${state.serviceId === s.id ? "selected" : ""}" data-sid="${s.id}">
+          <span><span class="c-title">${s.art} ${s.name}</span><br><span class="c-sub">${s.duration}</span></span>
+          <span class="c-price">${naira(s.price)}</span>
+        </button>`
+      ).join("");
+
+      document.getElementById("stylistChoices").innerHTML =
+        `<button type="button" class="choice ${state.stylistId === "any" ? "selected" : ""}" data-tid="any">
+           <span><span class="c-title">✨ First available</span><br><span class="c-sub">Fastest option</span></span>
+         </button>` +
+        GLOW.STYLISTS.map(
+          (t) => `
+        <button type="button" class="choice ${state.stylistId === t.id ? "selected" : ""}" data-tid="${t.id}">
+          <span><span class="c-title">${t.name}</span><br><span class="c-sub">${t.role} · ★ ${t.rating}</span></span>
+        </button>`
+        ).join("");
+
+      document.getElementById("timeGrid").innerHTML = GLOW.TIME_SLOTS.map(
+        (t) => `
+        <button type="button" class="choice ${state.time === t.value ? "selected" : ""}" data-t="${t.value}">
+          <span class="c-title" style="font-size:12.5px">${t.label}</span>
+        </button>`
+      ).join("");
+
+      // click handlers
+      document.querySelectorAll("[data-sid]").forEach((b) =>
+        b.onclick = () => { state.serviceId = b.dataset.sid; renderChoices(); }
+      );
+      document.querySelectorAll("[data-tid]").forEach((b) =>
+        b.onclick = () => { state.stylistId = b.dataset.tid; renderChoices(); }
+      );
+      document.querySelectorAll("[data-t]").forEach((b) =>
+        b.onclick = () => { state.time = b.dataset.t; renderChoices(); }
+      );
+    }
+
+    function summary() {
+      const s = serviceById(state.serviceId);
+      const st = state.stylistId === "any" ? "First available stylist" : stylistById(state.stylistId).name;
+      document.getElementById("summary").innerHTML = `
+        <div class="summary-line"><span>Service</span><span class="v">${s ? s.name : "—"}</span></div>
+        <div class="summary-line"><span>Stylist</span><span class="v">${st}</span></div>
+        <div class="summary-line"><span>Date</span><span class="v">${dateLabel(document.getElementById("date").value)}</span></div>
+        <div class="summary-line"><span>Time</span><span class="v">${timeLabel(state.time)}</span></div>
+        <div class="summary-line"><span>Payment</span><span class="v">${document.getElementById("pay").value} at salon</span></div>
+        <div class="summary-line"><span>Total</span><span class="v summary-total">${s ? naira(s.price) : "—"}</span></div>`;
+    }
+
+    function validate(step) {
+      if (step === 1) {
+        if (!state.serviceId) return (toast("Please choose a service first 💐"), false);
+      }
+      if (step === 2) {
+        const d = document.getElementById("date");
+        if (!d.value) return (toast("Pick a date for your visit 📅"), false);
+        if (new Date(d.value + "T00:00:00").getDay() === 0) return (toast("We're closed on Sundays 🙏 try Saturday"), false);
+        if (!state.time) return (toast("Choose a time slot ⏰"), false);
+      }
+      if (step === 3) {
+        const n = document.getElementById("name").value.trim();
+        const p = document.getElementById("phone").value.trim();
+        if (!n) return (toast("Your name helps us greet you properly 😊"), false);
+        if (!p || p.length < 7) return (toast("Enter a valid Nigerian phone number 📞"), false);
+      }
+      return true;
+    }
+
+    document.getElementById("next1").onclick = () => { if (validate(1)) show(2); };
+    document.getElementById("next2").onclick = () => {
+      if (validate(2)) { if (user) { document.getElementById("name").value = user.name; document.getElementById("phone").value = user.phone || ""; } summary(); show(3); }
+    };
+    document.getElementById("back2").onclick = () => show(1);
+    document.getElementById("back3").onclick = () => show(2);
+    document.getElementById("confirmBtn").onclick = () => {
+      if (!validate(3)) return;
+      const s = serviceById(state.serviceId);
+      const list = bookings();
+      const bk = {
+        id: nextBookingId(),
+        userId: user ? user.id : "guest",
+        customer: document.getElementById("name").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        serviceId: s.id,
+        service: s.name,
+        price: s.price,
+        stylistId: state.stylistId,
+        date: document.getElementById("date").value,
+        time: state.time,
+        status: "pending",
+        note: document.getElementById("note").value.trim(),
+        pay: document.getElementById("pay").value,
+        createdAt: new Date().toISOString(),
+      };
+      list.push(bk);
+      saveBookings(list);
+      toast("Booking confirmed! See you at the Palace 💛");
+      document.getElementById("bookForm").style.display = "none";
+      document.getElementById("pageTitle").textContent = "You're booked! 🎉";
+      document.getElementById("doneMsg").textContent =
+        `Thank you ${bk.customer}! We'll confirm via WhatsApp on ${bk.phone} within 2 working hours.`;
+      document.getElementById("doneCard").innerHTML = `
+        <div class="summary-line"><span>Booking ID</span><span class="v">${bk.id}</span></div>
+        <div class="summary-line"><span>Service</span><span class="v">${bk.service}</span></div>
+        <div class="summary-line"><span>Stylist</span><span class="v">${bk.stylistId === "any" ? "First available" : stylistById(bk.stylistId).name}</span></div>
+        <div class="summary-line"><span>When</span><span class="v">${dateLabel(bk.date)} · ${timeLabel(bk.time)}</span></div>
+        <div class="summary-line"><span>Pay at salon</span><span class="v summary-total">${naira(bk.price)}</span></div>`;
+      document.getElementById("doneBox").style.display = "block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    // defaults: tomorrow as min date
+    const dateInput = document.getElementById("date");
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    dateInput.min = tomorrow.toISOString().split("T")[0];
+    dateInput.value = dateInput.min;
+
+    renderChoices();
+    pill(1);
+    if (state.serviceId && state.stylistId) show(1);
+  </script>
+</body>
+</html>

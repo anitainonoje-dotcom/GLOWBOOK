@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlowBook · Bonyta Beauty Palace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="topbar"></header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-eyebrow">Ugbowo · Benin City</div>
+      <h1>Where Benin City <em>glows</em>, one chair at a time</h1>
+      <p>Braids, gel nails and spa pedicures at Bonyta Beauty Palace. Book your slot in under a minute — no calling, no waiting.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="booking.html">📅 Book an Appointment</a>
+        <a class="btn btn-outline" href="stylists.html">Meet the Stylists</a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Our Services &amp; Prices</h2>
+        <a href="booking.html">Book now →</a>
+      </div>
+      <p class="section-sub">All prices in naira. Payment at the salon — cash, transfer or POS.</p>
+      <div class="service-grid" id="serviceGrid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Our Stylists</h2>
+        <a href="stylists.html">See all →</a>
+      </div>
+      <div class="stylist-grid" id="stylistGrid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>Why clients keep coming back</h2></div>
+      <div class="card">
+        <p class="bio" style="font-size:14px">
+          “Osas did my knotless for my sister’s traditional wedding in Benin and people did not
+          stop asking who did it. I have moved from Lagos twice and still book before I land.”
+        </p>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+          <div class="avatar ivie" style="width:42px;height:42px;font-size:15px;margin:0;">EO</div>
+          <div>
+            <b style="font-size:13.5px">Ejiroghene O.</b>
+            <div style="font-size:11.5px;color:var(--plum-soft)">Effurun · regular since 2023</div>
+          </div>
+          <div style="margin-left:auto;color:var(--gold);font-size:13px">★★★★★</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-bottom:30px">
+      <div class="section-head"><h2>Visit the Palace</h2></div>
+      <div class="card" style="display:grid; gap:8px">
+        <div>📍 <b>24 Ihama Road, off Adolo College, Ugbowo, Benin City, Edo State</b></div>
+        <div>🕘 <b>Mon–Sat, 8:30 AM – 7:00 PM</b> · Closed Sundays</div>
+        <div>📞 <b>0803 456 4569</b> (WhatsApp works too)</div>
+        <div style="color:var(--plum-soft); font-size:12.5px">
+          Free parking behind the building. AC in every chair. Bring your own attachment packs or buy at the counter.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer"></div>
+  <nav id="bottomnav"></nav>
+  <div id="toast"></div>
+
+  <script src="js/data.js"></script>
+  <script>
+    renderChrome("home");
+
+    // Services
+    document.getElementById("serviceGrid").innerHTML = GLOW.SERVICES.map(
+      (s) => `
+      <div class="service-card">
+        <div class="service-art ${s.id === "knotless" ? "braids" : s.id === "boxbraids" ? "box" : s.id === "gel" ? "gel" : "pedi"}">${s.art}</div>
+        <div class="service-body">
+          <h3>${s.name}</h3>
+          <div class="service-desc">${s.desc}</div>
+          <div class="service-meta">
+            <div class="price">${naira(s.price)}</div>
+            <span class="duration">${s.duration}</span>
+          </div>
+        </div>
+      </div>`
+    ).join("");
+
+    // Stylists preview
+    document.getElementById("stylistGrid").innerHTML = GLOW.STYLISTS.map(
+      (t) => `
+      <a class="stylist-tile" href="stylists.html#${t.id}">
+        <div class="avatar lg ${t.colors}">${t.name[0]}</div>
+        <h3>${t.name}</h3>
+        <div class="role-line">${t.role}</div>
+        <div class="rating">★ ${t.rating} · ${t.reviews} reviews</div>
+      </a>`
+    ).join("");
+  </script>
+</body>
+</html>

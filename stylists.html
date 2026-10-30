@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Stylists · GlowBook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="topbar"></header>
+
+  <main class="container">
+    <section class="hero" style="padding-bottom:0">
+      <div class="hero-eyebrow">The Hands Behind the Glow</div>
+      <h1>Meet our <em>stylists</em></h1>
+      <p>Every stylist at Bonyta Beauty Palace is trained in-house. Scroll through their recent work and pick the hands you trust.</p>
+    </section>
+
+    <div id="stylistList"></div>
+  </main>
+
+  <div id="footer"></div>
+  <nav id="bottomnav"></nav>
+  <div id="toast"></div>
+
+  <script src="js/data.js"></script>
+  <script>
+    renderChrome("stylists");
+
+    // before/after gallery images rendered as coloured tiles (photos swap in later)
+    const GALLERY = {
+      osas: [
+        { emo: "🧑🏾‍🦱", grad: "linear-gradient(135deg,#e9c6d1,#c99aae)", tag: "before", cap: "Chiamaka N. — grown-out roots" },
+        { emo: "💫", grad: "linear-gradient(135deg,#f6dbe5,#e8a0b4)", tag: "after", cap: "Waist-length knotless, 8 weeks wear" },
+        { emo: "🧑🏾", grad: "linear-gradient(135deg,#e6d3ba,#cbb087)", tag: "before", cap: "Ella O. — strained ends" },
+        { emo: "✨", grad: "linear-gradient(135deg,#f3e0c8,#c9a24b)", tag: "after", cap: "Medium box braids with shine finish" },
+      ],
+      efe: [
+        { emo: "🤚🏾", grad: "linear-gradient(135deg,#e3d5dc,#c7afc0)", tag: "before", cap: "Omobola A. — chipped polish" },
+        { emo: "💅🏾", grad: "linear-gradient(135deg,#f0d6e2,#d8aec4)", tag: "after", cap: "Baby pink gel with gold stones" },
+        { emo: "👐🏾", grad: "linear-gradient(135deg,#e0d6c2,#bfae8e)", tag: "before", cap: "Bride’s trial set, uneven length" },
+        { emo: "👰🏾", grad: "linear-gradient(135deg,#f5ead1,#c9a24b)", tag: "after", cap: "Gold chrome wedding set, Mrs. Ajayi" },
+      ],
+      ivie: [
+        { emo: "🦶🏾", grad: "linear-gradient(135deg,#e4d9de,#c3b0b9)", tag: "before", cap: "Tolani F. — dry heels" },
+        { emo: "🌸", grad: "linear-gradient(135deg,#f1dee6,#cdb2c4)", tag: "after", cap: "Shea soak pedi + blush gel toes" },
+        { emo: "👐🏾", grad: "linear-gradient(135deg,#e6dcd2,#c2b8a6)", tag: "before", cap: "Natural nails, ridged and peeling" },
+        { emo: "🌿", grad: "linear-gradient(135deg,#e7ede2,#b9c9ad)", tag: "after", cap: "Buff + cuticle care, bare-nail glow" },
+      ],
+    };
+
+    document.getElementById("stylistList").innerHTML = GLOW.STYLISTS.map(
+      (t) => `
+      <section class="section" id="${t.id}">
+        <div class="card" style="margin-bottom:14px">
+          <div class="stylist-detail">
+            <div class="avatar lg ${t.colors}">${t.name[0]}</div>
+            <div style="flex:1">
+              <h2 style="font-size:22px">${t.name} <span style="font-size:13px; color:var(--gold)">★ ${t.rating}</span></h2>
+              <div style="font-size:12.5px; color:var(--rose-deep); font-weight:600">${t.role} · ${t.years} yrs at Bonyta</div>
+              <div class="bio" style="margin-top:8px">${t.bio}</div>
+              <div class="tags">${t.specialties.map((s) => `<span class="tag">${s}</span>`).join("")}</div>
+            </div>
+          </div>
+          <div style="margin-top:14px">
+            <a class="btn btn-rose btn-sm" href="booking.html?stylist=${t.id}">📅 Book ${t.name}</a>
+          </div>
+        </div>
+
+        <div class="section-head" style="margin-bottom:10px">
+          <h2 style="font-size:17px">Before &amp; After — recent work</h2>
+          <span style="font-size:11.5px;color:var(--plum-soft)">${t.reviews} happy reviews</span>
+        </div>
+        <div class="gallery" style="margin-bottom:24px">
+          ${GALLERY[t.id]
+            .map(
+              (g) => `
+            <div class="gal-card">
+              <div class="gal-img" style="background:${g.grad}">
+                ${g.emo}
+                <span class="gal-badge ${g.tag}">${g.tag}</span>
+              </div>
+              <div class="gal-caption">${g.cap}</div>
+            </div>`
+            )
+            .join("")}
+        </div>
+      </section>`
+    ).join("");
+  </script>
+</body>
+</html>

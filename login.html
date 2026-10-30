@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login · GlowBook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="topbar"></header>
+
+  <main class="container auth-wrap" style="padding-bottom:30px">
+    <section class="hero" style="padding-top:12px">
+      <div class="hero-eyebrow">Welcome back</div>
+      <h1>Login to <em>GlowBook</em></h1>
+      <p>Track your appointments, keep your favourite stylist busy, and never miss a glow-up.</p>
+    </section>
+
+    <div class="card form-card">
+      <div class="field">
+        <label for="email">Email or phone</label>
+        <input type="text" id="email" placeholder="adaeze@example.com" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button class="btn btn-primary btn-block" id="loginBtn">Login</button>
+      <p style="font-size:12.5px; text-align:center; margin-top:14px; color:var(--plum-soft)">
+        New to Bonyta? <a href="booking.html" style="color:var(--rose-deep); font-weight:600">Book first — an account is created automatically</a>
+      </p>
+    </div>
+
+    <div class="demo-panel card">
+      <h3 style="font-size:15px; margin-bottom:8px">Demo logins (one tap)</h3>
+      <p style="font-size:11.5px; color:var(--plum-soft); margin-bottom:12px">
+        This version has no database, so try the app with these demo accounts:
+      </p>
+      <div id="demoList"></div>
+    </div>
+  </main>
+
+  <div id="footer"></div>
+  <nav id="bottomnav"></nav>
+  <div id="toast"></div>
+
+  <script src="js/data.js"></script>
+  <script>
+    renderChrome("login");
+
+    const DEMOS = [
+      { label: "👩🏾 Customer — Adaeze Okonkwo", email: "adaeze@example.com", password: "adaeze123" },
+      { label: "✂️ Stylist — Osas (senior braider)", email: "osas@bonyta.ng", password: "osas123" },
+      { label: "👑 Owner — Mrs. Bonyta Obaseki", email: GLOW.OWNER_EMAIL, password: GLOW.OWNER_PASSWORD },
+    ];
+
+    document.getElementById("demoList").innerHTML = DEMOS.map(
+      (d, i) => `
+      <button class="demo-btn" data-i="${i}">
+        <span style="font-size:13.5px; font-weight:600">${d.label}</span>
+        <span style="margin-left:auto; font-size:10.5px; color:var(--plum-soft)">${d.email}</span>
+      </button>`
+    ).join("");
+
+    function doLogin(identifier, password) {
+      const users = Store.get("users", []);
+      const found = users.find(
+        (u) =>
+          (u.email.toLowerCase() === identifier.toLowerCase().trim() ||
+            (u.phone && u.phone.replace(/\s/g, "") === identifier.replace(/\s/g, ""))) &&
+          u.password === password
+      );
+      if (!found) return toast("Wrong email or password — try a demo login below 🔑");
+      Auth.login(found);
+      toast(`Welcome, ${found.name.split(" ")[0]}! 💛`);
+      setTimeout(() => {
+        location.href =
+          found.role === "owner" ? "dashboard.html" :
+          found.role === "stylist" ? "bookings.html" : "bookings.html";
+      }, 500);
+    }
+
+    document.getElementById("loginBtn").onclick = () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      if (!email || !password) return toast("Fill in both fields to login 🔐");
+      doLogin(email, password);
+    };
+    document.getElementById("password").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("loginBtn").click();
+    });
+    document.querySelectorAll(".demo-btn").forEach((b) =>
+      (b.onclick = () => {
+        const d = DEMOS[b.dataset.i];
+        document.getElementById("email").value = d.email;
+        document.getElementById("password").value = d.password;
+        doLogin(d.email, d.password);
+      })
+    );
+  </script>
+</body>
+</html>

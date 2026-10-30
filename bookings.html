@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Bookings · GlowBook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header id="topbar"></header>
+
+  <main class="container" style="padding-bottom:30px">
+    <section class="section" style="padding-top:18px">
+      <div class="section-head">
+        <h2 id="pageTitle">My Bookings</h2>
+        <a href="booking.html">+ New booking</a>
+      </div>
+      <p class="section-sub" id="pageSub"></p>
+    </section>
+
+    <div id="guestBanner"></div>
+    <div id="filterBar" class="filter-bar"></div>
+    <div id="list"></div>
+
+    <div id="accountActions"></div>
+  </main>
+
+  <div id="footer"></div>
+  <nav id="bottomnav"></nav>
+  <div id="toast"></div>
+
+  <script src="js/data.js"></script>
+  <script>
+    renderChrome("bookings");
+
+    const user = Auth.user();
+    let filter = "all";
+
+    function homeLink() {
+      return location.href = "login.html";
+    }
+
+    function init() {
+      document.getElementById("guestBanner").innerHTML = user ? "" : `
+        <div class="card" style="margin-bottom:18px; text-align:center">
+          <p style="font-size:13.5px; color:var(--plum-soft)">
+            You're browsing as a guest. Login to see <b>your</b> saved appointments.
+          </p>
+          <a class="btn btn-rose btn-sm" href="login.html" style="margin-top:10px">🔐 Login</a>
+        </div>`;
+      document.getElementById("pageSub").textContent =
+        user && user.role === "stylist"
+          ? "Appointments booked with you, " + user.name.split(" (")[0] + ". Mark work as done when clients leave."
+          : "Upcoming treatments at Bonyta Beauty Palace.";
+      renderFilters();
+      renderList();
+      renderAccountActions();
+    }
+
+    function myBookings() {
+      if (!user) return [];
+      if (user.role === "stylist") return bookings().filter((b) => b.stylistId === user.stylistId);
+      if (user.role === "owner") return bookings();
+      return bookings().filter((b) => b.userId === user.id);
+    }
+
+    function renderFilters() {
+      const statuses = ["all", "pending", "confirmed", "completed", "cancelled"];
+      document.getElementById("filterBar").innerHTML = statuses
+        .map(
+          (s) => `<span class="chip ${filter === s ? "on" : ""}" data-f="${s}">
+            ${s[0].toUpperCase() + s.slice(1)} ( ${s === "all" ? myBookings().length : myBookings().filter((b) => b.status === s).length} )
+          </span>`
+        )
+        .join("");
+      document.querySelectorAll("#filterBar .chip").forEach(
+        (c) => (c.onclick = () => { filter = c.dataset.f; renderFilters(); renderList(); })
+      );
+    }
+
+    function renderList() {
+      let list = myBookings()
+        .filter((b) => filter === "all" || b.status === filter)
+        .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+      const el = document.getElementById("list");
+      if (!list.length) {
+        el.innerHTML = `
+          <div class="empty card">
+            <div class="big">🌸</div>
+            <b>No ${filter === "all" ? "" : filter + " "}bookings ${user ? "yet" : "while logged out"}.</b>
+            <p style="font-size:12.5px; margin-top:6px">Your next glow-up is one tap away.</p>
+            <a class="btn btn-primary btn-sm" href="booking.html" style="margin-top:12px">Book an appointment</a>
+          </div>`;
+        return;
+      }
+
+      el.innerHTML = list
+        .map((b) => {
+          const st = stylistById(b.stylistId);
+          const isStylist = user && user.role === "stylist";
+          const isOwner = user && user.role === "owner";
+          const canCancel = user && user.role === "customer" && (b.status === "pending" || b.status === "confirmed");
+          const canConfirm = isOwner && b.status === "pending";
+          const canComplete = (isOwner || isStylist) && (b.status === "confirmed" || b.status === "pending");
+          return `
+          <div class="appt-card">
+            <div class="appt-top">
+              <div>
+                <div class="appt-service">${b.service}</div>
+                <div class="appt-when">${dateLabel(b.date)} · ${timeLabel(b.time)}</div>
+              </div>
+              <span class="status ${b.status}">${b.status}</span>
+            </div>
+            <div class="appt-meta">
+              ${isStylist || isOwner ? `<span>👤 <b>${b.customer}</b></span><span>📞 <b>${b.phone}</b></span>` : `<span>✂️ <b>${st ? st.name : "Not assigned"}</b></span>`}
+              <span>💰 <b>${naira(b.price)}</b></span>
+              ${isOwner ? `<span>🆔 <b>${b.id}</b></span>` : ""}
+            </div>
+            ${b.note ? `<div class="appt-meta" style="margin-top:6px">📝 ${b.note}</div>` : ""}
+            ${(canCancel || canConfirm || canComplete) ? `
+            <div class="appt-actions">
+              ${canConfirm ? `<button class="btn btn-primary btn-sm" onclick="setStatus('${b.id}','confirmed')">✓ Confirm</button>` : ""}
+              ${canComplete ? `<button class="btn btn-gold btn-sm" onclick="setStatus('${b.id}','completed')">✔ Mark done</button>` : ""}
+              ${canCancel || isOwner ? `<button class="btn btn-outline btn-sm" onclick="setStatus('${b.id}','cancelled')">✕ Cancel</button>` : ""}
+            </div>` : ""}
+          </div>`;
+        })
+        .join("");
+    }
+
+    window.setStatus = function (id, status) {
+      const list = bookings();
+      const bk = list.find((b) => b.id === id);
+      if (!bk) return;
+      bk.status = status;
+      saveBookings(list);
+      toast(status === "cancelled" ? "Booking cancelled" : status === "completed" ? "Nice work — marked done ✅" : "Booking " + status + " ✓");
+      renderFilters();
+      renderList();
+    };
+
+    function renderAccountActions() {
+      const el = document.getElementById("accountActions");
+      if (!user) return;
+      el.innerHTML = `
+        <div class="card" style="margin-top:22px; text-align:center">
+          <div style="font-size:13px; color:var(--plum-soft)">Logged in as</div>
+          <b style="font-size:15px">${user.name}</b>
+          <div style="font-size:11.5px; color:var(--plum-soft); margin-bottom:14px">${user.email}</div>
+          ${
+            user.role === "owner"
+              ? `<a class="btn btn-gold btn-sm" href="dashboard.html" style="width:100%">👑 Open Owner Dashboard</a>`
+              : ""
+          }
+          ${user.role === "stylist" ? `<button class="btn btn-ghost btn-sm" style="width:100%" onclick="toast('Schedule sync coming with the database update 📆')">📆 View full schedule</button>` : ""}
+          <button class="btn btn-outline btn-sm" style="width:100%; margin-top:8px" onclick="logoutNow()">🚪 Logout</button>
+        </div>`;
+    }
+
+    window.logoutNow = function () {
+      Auth.logout();
+      toast("Logged out. Come back soon! 💐");
+      setTimeout(() => (location.href = "index.html"), 400);
+    };
+
+    init();
+  </script>
+</body>
+</html>
